@@ -1,0 +1,159 @@
+Instructions for Elegoo SmartCar Robot v4
+
+This is the result of reverse engineering the communications between the camera module
+and the Android application the manufacturer provides for it.
+
+I had previously made a request to Elegoo for them to provide the required firmware
+source code for the ESP32 camera module, however, they refused to provide it, saying
+that it was "closed source". My response to them for this statement was that I found
+that this was a reprehensible policy for a device whose sole purpose was for the
+education of children in programming and that I would avoid their products in the
+future and recommend that others seek alternate suppliers as well, AND that I had
+reverse engineered the communications and discovered that their code was just a very
+minor modification of Espressif's "camera web server" example source code. They then
+attempted to backtrack slightly by claiming that being closed source was temporary due
+to the fact that the product was new.
+
+That excuse does not hold water.
+
+I RECOMMEND THAT YOU DO NOT PURCHASE PRODUCTS FROM ELEGOO.
+
+Nevertheless, I happen to have one of these robot cars for the purpose of educating my
+children in robotics, as you may as well, and therefore this source code may be useful.
+
+
+The communications and security over it are fairly simple. The robot control application
+expects to connect to a wifi access point with an SSID that starts with the string "ELEGOO-"
+
+The camera module itself MUST have an IP address of 192.168.4.1, as the IP address is
+hardcoded in the application.
+
+When you press the "connect" button in the application, it attempts to make a TCP
+connection to that IP address on port 100. This port is used both to verify that the
+robot is connected, AND to send control commands to the robot. These commands that
+are to be sent to the robot are simple JSON as follows;
+
+{ "N": "#", "D1": "#", "D2": "#" }
+
+The exact details of this need not be listed here, since they are documented within the
+file located at main/socket_server.c
+
+When the camera module receives the command over port 100, it then sends a corresponding
+command over UART to the robot's microcontroller.
+
+NOTE: Elegoo had the UART baud rate set for 9600. I have increased this to 115200. You
+will either need to increase the baud rate in the robot firmware, or decrease it in
+main/socket_server.c for communications to be successful. The higher rate is more
+practical for debugging functionality I have added.
+
+
+Now, if all you change is adding the socket and UART communications, you will find that the
+application is unable to receive data from the camera. This is because they have also made
+a very minor change to the HTTP server from Espressif's example. Specifically, the Espressif
+example has the camera stream available at http://IP:81/stream, and Elegoo has moved the
+stream to http://IP/Test. There is no difference at all in the specifications of the stream,
+only in its URI.
+
+
+HARDWARE DETAILS:
+
+This camera is based on an ESP32-WROVER-B wifi module.
+
+Pinout for the camera connector is as follows;
+
+1:	NC	NC
+2:	AGND	GND
+3:	SDA	IO22
+4:	AVDD	VDD2V8
+5:	SCL	IO23
+6:	RESET	IO15
+7:	VSYNC	IO25
+8:	PWDN	PULLDN
+9:	HREF	IO26
+10:	DVDD	VDD1V3
+11:	DOVDD	VDD3V3
+12:	Y9	IO19
+13:	XCLK	IO27
+14:	Y8	IO36
+15:	DGND	GND
+16:	Y7	IO18
+17:	PCLK	IO21
+18:	Y6	IO39
+19:	Y2	IO32
+20:	Y5	IO5
+21:	Y3	IO35
+22:	Y4	IO34
+23:	NC	NC
+24:	NC	NC
+
+This happens to match up with something called "M5Stack Camera F (Wide)", so when you run
+make menuconfig, under Camera Pins, select that option.
+
+
+DEBUGGING
+
+In addition to adding the robot control socket at port 100, this source also adds a
+debugging output socket at port 101. If the robot's microcontroller sends data to the
+camera over UART, this message will be relayed to anything connected to port 101.
+
+To use the debug port, just telnet to it, such as "$ telnet 192.168.4.1 101".
+
+
+
+OTHER WORK
+
+The main logic board that the robot car comes with is a breakout board for an obsolete
+Atmel AVR microcontroller -- ATMEGA328. Because of the obsolete nature of the MCU, it is
+not possible to run a modern RTOS. An additional downside of this particular MCU is that
+it runs on 5V, which means that even though the connection header is fully compatible with
+other microcontroller breakout boards with more modern Cortex-M0 or M4 MCU's, the voltage
+level is not compatible. Consequently, in order to replace the obsolete MCU with a sensible
+modern one, some adjustments are needed to the robot interface board.
+
+I, personally, have replaced the ATMEGA328 breakout board with a SAMD51 breakout board
+purchased from Adafruit: https://www.adafruit.com/product/3382 -- which happens to have
+precisely the same footprint and interface header configuration. However, as mentioned,
+this board has a voltage level of 3.3V, whereas the old board is 5.0V. Plug it straight in
+and you stand a good chance of killing your fancy Cortex-M4.
+
+The changes needed are as follows;
+
+1) On the bottom side of the ROBOT INTERFACE BOARD; locate PIN-3 of the infrared receiver.
+There is a fairly wide trace connected to that pin delivering it with 5.0V. Cut that trace,
+then jump PIN-3 to 3.3v, which is a labeled pin on a header on the opposite side of the board.
+
+2) There is a pull-UP resistor "R2" next to push-button switch S2 near the power input plug.
+That resistor must be removed. It isn't necessary to begin with since the microcontroller
+digital inputs can have their internal pull-up resistors activated, so don't waste time
+making a 3.3v pull-up.
+
+At this point, the robot interface board itself is now safe to connect to the 3.3v MCU
+breakout board, however, some of the sensors are still not safe.
+
+3) The ultrasonic rangefinder (HC-SR04): looking at this sensor from the front of the
+robot, the connection is by way of a 4-pin socket. The pin labels are visible from the
+front of the robot. Cut the trace leading to the pin labeled "ECHO". Cut it right by the
+pin. Then scrape some solder mask off of the trace opposite the pin and tin it. Solder a
+1kohm 805 (surface mount) resistor over the cut segment of the trace. Solder a 2kohm 805
+between the echo pin and the gnd pin. This will divide the voltage down to 3.333v, which is
+within the input specifications for a 3.3v MCU.
+
+4) Infrared line tracking sensor: The return signals already run through resistors, however,
+they are only in-line resistors and not set up in a voltage dividing configuration. This
+sensor has a 5-pin socket. Two of the pins are +5V and GND, the other 3 correspond to
+LEFT, CENTER, and RIGHT return signals. Next to each of the three return signals, scrape
+off a small amount of the solder mask and tin, such that an 805 surface mount resistor will
+fit between the pin and the newly created pad. Solder in 20k resistors on all 3 positions.
+
+OTHER MODIFICATIONS:
+
+The MPU has an interrupt pin, but it isn't connected to anywhere. The header pin labeled
+"3" near the opposite corner of the board from the power socket is unused, therefore add
+a wire from the INT pin of the MPU to "3". You can also upgrade the MPU from MPU6050 to
+MPU9250 (under $10 CDN from Amazon: https://www.amazon.ca/gp/product/B07TV4L6HT) which adds
+an AK8963 magnetometer/compass.
+
+OPERATING SYSTEM:
+
+I recommend Zephyr RTOS: https://github.com/zephyrproject-rtos/zephyr -- it supports Cortex-M4,
+and SAMD51 specifically.

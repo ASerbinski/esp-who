@@ -1145,7 +1145,7 @@ void app_httpd_main()
         .user_ctx = NULL};
 
     httpd_uri_t stream_uri = {
-        .uri = "/stream",
+        .uri = "/Test",
         .method = HTTP_GET,
         .handler = stream_handler,
         .user_ctx = NULL};
@@ -1238,13 +1238,14 @@ void app_httpd_main()
 
         httpd_register_uri_handler(camera_httpd, &mdns_uri);
         httpd_register_uri_handler(camera_httpd, &monitor_uri);
+	httpd_register_uri_handler(camera_httpd, &stream_uri);
     }
-
+/*
     config.server_port += 1;
     config.ctrl_port += 1;
     ESP_LOGI(TAG, "Starting stream server on port: '%d'", config.server_port);
     if (httpd_start(&stream_httpd, &config) == ESP_OK)
     {
         httpd_register_uri_handler(stream_httpd, &stream_uri);
-    }
+    }*/
 }

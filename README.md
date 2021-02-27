@@ -2,6 +2,14 @@
 
 ESP-WHO is a face detection and recognition platform that is currently based on Espressif Systems' [ESP32](https://espressif.com/en/products/hardware/esp32/overview) chip.
 
+
+# ELEGOO SmartCar Robot v4 camera module
+
+The "closed source" firmware for this robot car is based on the camera_web_server example.
+I have reverse engineered the changes and implemented them here.
+Please see examples/single_chip/camera_web_server/README for details.
+
+
 # Overview
 ESP-WHO supports development of face detection and recognition applications based around Espressif Systems' [ESP32](https://espressif.com/en/products/hardware/esp32/overview) chip in the most convenient way. With ESP-WHO, you can easily build up face detection- and recognition-featured applications, for instance:
 * A coffee machine that brews coffee according to your taste preference;

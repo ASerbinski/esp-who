@@ -24,11 +24,12 @@
 #include "app_wifi.h"
 #include "app_httpd.h"
 #include "app_mdns.h"
+#include "socket_server.h"
 
-void app_main()
-{
-    app_wifi_main();
-    app_camera_main();
-    app_httpd_main();
-    app_mdns_main();
+void app_main(){
+	app_wifi_main();
+	app_camera_main();
+	app_httpd_main();
+	app_mdns_main();
+	socket_server();
 }

@@ -916,7 +916,7 @@
         <script>
 document.addEventListener('DOMContentLoaded', function (event) {
   var baseHost = document.location.origin
-  var streamUrl = baseHost + ':81'
+  var streamUrl = baseHost
 
   function fetchUrl(url, cb){
     fetch(url)
@@ -1282,7 +1282,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
   }
 
   const startStream = () => {
-    view.src = `${streamUrl}/stream`
+    view.src = `${streamUrl}/Test`
     show(viewContainer)
     streamButton.innerHTML = 'Stop Stream'
   }

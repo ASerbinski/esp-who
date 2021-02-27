@@ -478,6 +478,9 @@ static esp_err_t stream_handler(httpd_req_t *req)
     int64_t fr_encode = 0;
 #endif
 
+    sensor_t *s = esp_camera_sensor_get();
+    s->set_hmirror(s, 1);
+
     static int64_t last_frame = 0;
     if (!last_frame)
     {
